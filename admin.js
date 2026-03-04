@@ -1,6 +1,6 @@
 // Configuración de Supabase
 const SUPABASE_URL = 'https://cvhxhauzvgqpsaacxfcs.supabase.co'; // Reemplaza con tu URL
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2aHhoYXV6dmdxcHNhYWN4ZmNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzYwNDYsImV4cCI6MjA4ODIxMjA0Nn0.3Nt_O3aS5Ps9JqOYQ-WjTEw1_z06_VyTyyBd8fJmlsc; // Reemplaza con tu key
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2aHhoYXV6dmdxcHNhYWN4ZmNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzYwNDYsImV4cCI6MjA4ODIxMjA0Nn0.3Nt_O3aS5Ps9JqOYQ-WjTEw1_z06_VyTyyBd8fJmlsc'; // Reemplaza con tu key
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Elementos del DOM
@@ -275,3 +275,4 @@ function mostrarToast(mensaje, tipo = 'success') {
     }, 3000);
 
 }
+
