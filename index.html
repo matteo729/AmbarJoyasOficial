@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ámbar Joyas - Elegancia en cada detalle</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <h1>Ámbar Joyas</h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="active">Inicio</a>
+                <a href="#coleccion">Colección</a>
+                <a href="#contacto">Contacto</a>
+                <!-- Carrito icono con contador -->
+                <div class="carrito-icono" id="carrito-icono">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="carrito-contador" id="carrito-contador">0</span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <h2>Brilla con nuestra colección exclusiva</h2>
+                <p>Joyas artesanales que cuentan historias</p>
+            </div>
+        </section>
+
+        <section id="coleccion" class="catalogo">
+            <div class="container">
+                <h2 class="section-title">Nuestra Colección</h2>
+                <div id="productos-grid" class="productos-grid">
+                    <!-- Los productos se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+        </section>
+
+        <section id="contacto" class="contacto">
+            <div class="container">
+                <h2 class="section-title">Contacto</h2>
+                <div class="contacto-info">
+                    <p><i class="fas fa-envelope"></i> info@ambarjoyas.com</p>
+                    <p><i class="fas fa-phone"></i> +54 9 11 1234-5678</p>
+                    <p><i class="fas fa-map-marker-alt"></i> Buenos Aires, Argentina</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal del Carrito -->
+    <div id="carrito-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tu Carrito <i class="fas fa-shopping-cart"></i></h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="carrito-items" class="carrito-items">
+                    <!-- Los items del carrito se cargarán aquí -->
+                </div>
+                <div class="carrito-total">
+                    <h3>Total: $<span id="carrito-total">0.00</span></h3>
+                </div>
+                
+                <!-- Formulario de datos del cliente -->
+                <div class="cliente-form" id="cliente-form">
+                    <h3>Datos de contacto</h3>
+                    <div class="form-group">
+                        <label for="cliente-nombre">Nombre y Apellido *</label>
+                        <input type="text" id="cliente-nombre" required placeholder="Ingresa tu nombre completo">
+                    </div>
+                    <div class="form-group">
+                        <label for="cliente-email">Email *</label>
+                        <input type="email" id="cliente-email" required placeholder="tucorreo@ejemplo.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="cliente-telefono">Teléfono *</label>
+                        <input type="tel" id="cliente-telefono" required placeholder="+54 9 11 1234-5678">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="vaciar-carrito">Vaciar Carrito</button>
+                <button class="btn-primary" id="ordenar-pedido" disabled>Ordenar Pedido por WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Ámbar Joyas. Todos los derechos reservados.</p>
+    </footer>
+
+    <div id="mensaje-toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
