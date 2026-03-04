@@ -1,84 +1,200 @@
-// Configuración de Supabase
+// Configuración de Supabase - ¡REEMPLAZA ESTOS VALORES!
 const SUPABASE_URL = 'https://cvhxhauzvgqpsaacxfcs.supabase.co'; // Reemplaza con tu URL
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2aHhoYXV6dmdxcHNhYWN4ZmNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2MzYwNDYsImV4cCI6MjA4ODIxMjA0Nn0.3Nt_O3aS5Ps9JqOYQ-WjTEw1_z06_VyTyyBd8fJmlsc'; // Reemplaza con tu key
+
+// Verificar que Supabase esté cargado
+if (typeof window.supabase === 'undefined') {
+    console.error('Error: Supabase no está cargado. Verifica el CDN en el HTML.');
+    document.addEventListener('DOMContentLoaded', () => {
+        mostrarToast('Error: No se pudo cargar Supabase. Recarga la página.', 'error');
+    });
+}
+
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Elementos del DOM
-const loginSection = document.getElementById('login-section');
-const adminPanel = document.getElementById('admin-panel');
-const loginForm = document.getElementById('login-form');
-const logoutBtn = document.getElementById('logout-btn');
-const productoForm = document.getElementById('producto-form');
-const mensajeToast = document.getElementById('mensaje-toast');
+let loginSection, adminPanel, loginForm, logoutBtn, productoForm, mensajeToast;
+let emailInput, passwordInput, loginError, submitBtn;
 
-// Verificar sesión al cargar
-document.addEventListener('DOMContentLoaded', verificarSesion);
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+    // Obtener referencias a elementos del DOM
+    loginSection = document.getElementById('login-section');
+    adminPanel = document.getElementById('admin-panel');
+    loginForm = document.getElementById('login-form');
+    logoutBtn = document.getElementById('logout-btn');
+    productoForm = document.getElementById('producto-form');
+    mensajeToast = document.getElementById('mensaje-toast');
+    emailInput = document.getElementById('email');
+    passwordInput = document.getElementById('password');
+    loginError = document.getElementById('login-error');
+    submitBtn = document.getElementById('submit-producto');
 
+    // Verificar sesión al cargar
+    verificarSesion();
+
+    // Event listeners
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    if (productoForm) {
+        productoForm.addEventListener('submit', handleAddProduct);
+    }
+
+    // Preview de imagen
+    const imagenInput = document.getElementById('imagen');
+    if (imagenInput) {
+        imagenInput.addEventListener('change', previewImagen);
+    }
+});
+
+// Función para verificar sesión
 async function verificarSesion() {
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Verificando sesión...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+            console.error('Error al verificar sesión:', error);
+            throw error;
+        }
         
         if (session) {
+            console.log('Sesión activa:', session.user.email);
             // Usuario logueado
-            loginSection.style.display = 'none';
-            adminPanel.style.display = 'block';
+            if (loginSection) loginSection.style.display = 'none';
+            if (adminPanel) adminPanel.style.display = 'block';
+            if (logoutBtn) logoutBtn.style.display = 'inline-flex';
             cargarProductosAdmin();
         } else {
+            console.log('No hay sesión activa');
             // No logueado
-            loginSection.style.display = 'flex';
-            adminPanel.style.display = 'none';
+            if (loginSection) loginSection.style.display = 'flex';
+            if (adminPanel) adminPanel.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'none';
         }
     } catch (error) {
         console.error('Error verificando sesión:', error);
+        mostrarToast('Error al verificar sesión', 'error');
     }
 }
 
-// Login
-loginForm.addEventListener('submit', async (e) => {
+// Manejar login
+async function handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    const email = emailInput ? emailInput.value : '';
+    const password = passwordInput ? passwordInput.value : '';
+    
+    if (!email || !password) {
+        mostrarToast('Por favor ingresa email y contraseña', 'error');
+        return;
+    }
+    
+    // Deshabilitar botón mientras procesa
+    const loginBtn = document.getElementById('login-btn');
+    if (loginBtn) {
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ingresando...';
+    }
     
     try {
+        console.log('Intentando login con:', email);
+        
         const { data, error } = await supabase.auth.signInWithPassword({
             email: email,
             password: password
         });
         
-        if (error) throw error;
+        if (error) {
+            console.error('Error de login:', error);
+            throw error;
+        }
         
+        console.log('Login exitoso:', data);
         mostrarToast('¡Bienvenida!', 'success');
-        verificarSesion();
+        
+        // Limpiar formulario
+        if (loginForm) loginForm.reset();
+        if (loginError) loginError.style.display = 'none';
+        
+        // Actualizar UI
+        await verificarSesion();
+        
     } catch (error) {
-        mostrarToast('Error al iniciar sesión: ' + error.message, 'error');
+        console.error('Error en login:', error);
+        
+        let mensajeError = 'Error al iniciar sesión';
+        if (error.message.includes('Invalid login credentials')) {
+            mensajeError = 'Email o contraseña incorrectos';
+        } else if (error.message.includes('Email not confirmed')) {
+            mensajeError = 'Por favor confirma tu email primero';
+        }
+        
+        if (loginError) {
+            loginError.textContent = mensajeError;
+            loginError.style.display = 'block';
+        }
+        
+        mostrarToast(mensajeError, 'error');
+    } finally {
+        // Rehabilitar botón
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingresar';
+        }
     }
-});
+}
 
-// Logout
-logoutBtn.addEventListener('click', async () => {
+// Manejar logout
+async function handleLogout() {
     try {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         
         mostrarToast('Sesión cerrada', 'success');
-        verificarSesion();
+        await verificarSesion();
+        
     } catch (error) {
+        console.error('Error al cerrar sesión:', error);
         mostrarToast('Error al cerrar sesión', 'error');
     }
-});
+}
+
+// Preview de imagen
+function previewImagen(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('imagen-preview');
+    const previewImg = preview ? preview.querySelector('img') : null;
+    
+    if (file && preview && previewImg) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
 
 // Agregar producto
-productoForm.addEventListener('submit', async (e) => {
+async function handleAddProduct(e) {
     e.preventDefault();
     
-    const nombre = document.getElementById('nombre').value;
-    const precio = document.getElementById('precio').value;
-    const descripcion = document.getElementById('descripcion').value;
-    const imagenFile = document.getElementById('imagen').files[0];
+    const nombre = document.getElementById('nombre')?.value;
+    const precio = document.getElementById('precio')?.value;
+    const descripcion = document.getElementById('descripcion')?.value;
+    const imagenFile = document.getElementById('imagen')?.files[0];
     
-    if (!imagenFile) {
-        mostrarToast('Por favor selecciona una imagen', 'error');
+    // Validaciones
+    if (!nombre || !precio || !descripcion || !imagenFile) {
+        mostrarToast('Por favor completa todos los campos', 'error');
         return;
     }
     
@@ -94,34 +210,46 @@ productoForm.addEventListener('submit', async (e) => {
         return;
     }
     
+    // Deshabilitar botón
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Agregando...';
+    }
+    
     try {
-        // Mostrar indicador de carga
-        mostrarToast('Subiendo imagen...', 'success');
+        // Verificar sesión antes de subir
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            throw new Error('No hay sesión activa. Por favor inicia sesión nuevamente.');
+        }
         
         // Generar nombre único para la imagen
         const fileExt = imagenFile.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${fileName}`;
+        
+        console.log('Subiendo imagen:', fileName);
         
         // Subir imagen a Storage
         const { data: imagenData, error: imagenError } = await supabase.storage
             .from('joyas-imagenes')
-            .upload(filePath, imagenFile, {
+            .upload(fileName, imagenFile, {
                 cacheControl: '3600',
                 upsert: false
             });
         
         if (imagenError) {
             console.error('Error subiendo imagen:', imagenError);
-            throw new Error('Error al subir la imagen');
+            throw new Error('Error al subir la imagen: ' + imagenError.message);
         }
         
-        // Obtener URL pública de la imagen
+        // Obtener URL pública
         const { data: { publicUrl } } = supabase.storage
             .from('joyas-imagenes')
-            .getPublicUrl(filePath);
+            .getPublicUrl(fileName);
         
-        // Guardar producto en la base de datos
+        console.log('Imagen subida correctamente:', publicUrl);
+        
+        // Guardar producto
         const { error: productoError } = await supabase
             .from('productos')
             .insert([
@@ -134,26 +262,43 @@ productoForm.addEventListener('submit', async (e) => {
             ]);
         
         if (productoError) {
-            // Si falla, eliminar la imagen subida
+            // Si falla, eliminar la imagen
             await supabase.storage
                 .from('joyas-imagenes')
-                .remove([filePath]);
+                .remove([fileName]);
             throw productoError;
         }
         
         mostrarToast('Producto agregado exitosamente', 'success');
-        productoForm.reset();
-        cargarProductosAdmin();
+        
+        // Limpiar formulario
+        if (productoForm) productoForm.reset();
+        const preview = document.getElementById('imagen-preview');
+        if (preview) preview.style.display = 'none';
+        
+        // Recargar lista
+        await cargarProductosAdmin();
         
     } catch (error) {
         console.error('Error:', error);
-        mostrarToast('Error al agregar el producto: ' + error.message, 'error');
+        mostrarToast('Error: ' + error.message, 'error');
+    } finally {
+        // Rehabilitar botón
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Agregar Producto';
+        }
     }
-});
+}
 
-// Cargar productos para el admin
+// Cargar productos
 async function cargarProductosAdmin() {
+    const lista = document.getElementById('admin-productos-lista');
+    if (!lista) return;
+    
     try {
+        lista.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Cargando productos...</div>';
+        
         const { data: productos, error } = await supabase
             .from('productos')
             .select('*')
@@ -161,39 +306,34 @@ async function cargarProductosAdmin() {
         
         if (error) throw error;
         
-        mostrarProductosAdmin(productos);
+        if (!productos || productos.length === 0) {
+            lista.innerHTML = '<p class="sin-productos">No hay productos cargados</p>';
+            return;
+        }
+        
+        lista.innerHTML = productos.map(producto => `
+            <div class="admin-producto-item" data-id="${producto.id}">
+                <img src="${producto.imagen_url}" alt="${producto.nombre}" class="admin-producto-imagen" loading="lazy">
+                <div class="admin-producto-info">
+                    <h3>${producto.nombre}</h3>
+                    <p class="producto-precio">$${parseFloat(producto.precio).toFixed(2)}</p>
+                    <p class="producto-descripcion">${producto.descripcion}</p>
+                </div>
+                <div class="admin-producto-acciones">
+                    <button onclick="editarProducto('${producto.id}')" class="btn-editar">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button onclick="eliminarProducto('${producto.id}')" class="btn-eliminar">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
     } catch (error) {
         console.error('Error cargando productos:', error);
-        mostrarToast('Error al cargar los productos', 'error');
+        lista.innerHTML = '<p class="sin-productos error">Error al cargar los productos</p>';
     }
-}
-
-function mostrarProductosAdmin(productos) {
-    const lista = document.getElementById('admin-productos-lista');
-    
-    if (!productos || productos.length === 0) {
-        lista.innerHTML = '<p class="sin-productos">No hay productos cargados</p>';
-        return;
-    }
-    
-    lista.innerHTML = productos.map(producto => `
-        <div class="admin-producto-item" data-id="${producto.id}">
-            <img src="${producto.imagen_url}" alt="${producto.nombre}" class="admin-producto-imagen" loading="lazy">
-            <div class="admin-producto-info">
-                <h3>${producto.nombre}</h3>
-                <p>$${parseFloat(producto.precio).toFixed(2)}</p>
-                <p class="producto-descripcion">${producto.descripcion}</p>
-            </div>
-            <div class="admin-producto-acciones">
-                <button onclick="editarProducto('${producto.id}')" class="btn-editar">
-                    <i class="fas fa-edit"></i> Editar
-                </button>
-                <button onclick="eliminarProducto('${producto.id}')" class="btn-eliminar">
-                    <i class="fas fa-trash"></i> Eliminar
-                </button>
-            </div>
-        </div>
-    `).join('');
 }
 
 // Eliminar producto
@@ -201,7 +341,7 @@ window.eliminarProducto = async (id) => {
     if (!confirm('¿Estás segura de que quieres eliminar este producto?')) return;
     
     try {
-        // Primero obtener la URL de la imagen para eliminarla del storage
+        // Obtener URL de la imagen
         const { data: producto, error: getError } = await supabase
             .from('productos')
             .select('imagen_url')
@@ -218,23 +358,16 @@ window.eliminarProducto = async (id) => {
         
         if (deleteError) throw deleteError;
         
-        // Eliminar imagen del storage si existe
+        // Eliminar imagen del storage
         if (producto && producto.imagen_url) {
-            const urlParts = producto.imagen_url.split('/');
-            const fileName = urlParts[urlParts.length - 1];
-            
-            const { error: storageError } = await supabase.storage
+            const fileName = producto.imagen_url.split('/').pop();
+            await supabase.storage
                 .from('joyas-imagenes')
                 .remove([fileName]);
-            
-            if (storageError) {
-                console.error('Error eliminando imagen:', storageError);
-                // No detenemos el flujo si la imagen no se puede eliminar
-            }
         }
         
         mostrarToast('Producto eliminado', 'success');
-        cargarProductosAdmin();
+        await cargarProductosAdmin();
         
     } catch (error) {
         console.error('Error:', error);
@@ -257,7 +390,7 @@ window.editarProducto = async (id) => {
         if (error) throw error;
         
         mostrarToast('Descripción actualizada', 'success');
-        cargarProductosAdmin();
+        await cargarProductosAdmin();
         
     } catch (error) {
         console.error('Error:', error);
@@ -267,13 +400,12 @@ window.editarProducto = async (id) => {
 
 // Mostrar toast
 function mostrarToast(mensaje, tipo = 'success') {
+    if (!mensajeToast) return;
+    
     mensajeToast.textContent = mensaje;
     mensajeToast.className = `toast show ${tipo}`;
     
     setTimeout(() => {
         mensajeToast.classList.remove('show');
     }, 3000);
-
 }
-
-
