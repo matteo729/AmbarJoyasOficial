@@ -5,19 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Admin - Ámbar Joyas</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Supabase CDN (debe ir antes de admin.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="admin-body">
     <header>
         <nav class="navbar">
             <div class="logo">
-                <h1>Ámbar Joyas - Admin</h1>
+                <h1><i class="fas fa-gem"></i> Ámbar Joyas - Admin</h1>
             </div>
             <div class="nav-links">
-                <a href="index.html"><i class="fas fa-store"></i> Ver Tienda</a>
-                <button id="logout-btn" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+                <a href="index.html" class="nav-link"><i class="fas fa-store"></i> Ver Tienda</a>
+                <button id="logout-btn" class="btn-logout" style="display: none;">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
             </div>
         </nav>
     </header>
@@ -26,52 +29,98 @@
         <!-- Login Section -->
         <div id="login-section" class="login-container">
             <div class="login-card">
-                <h2><i class="fas fa-lock"></i> Acceso Administrador</h2>
+                <div class="login-header">
+                    <i class="fas fa-lock"></i>
+                    <h2>Acceso Administrador</h2>
+                </div>
                 <form id="login-form">
                     <div class="form-group">
-                        <label for="email"><i class="fas fa-envelope"></i> Email</label>
-                        <input type="email" id="email" required placeholder="admin@ambarjoyas.com">
+                        <label for="email">
+                            <i class="fas fa-envelope"></i> Email
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email"
+                            required 
+                            placeholder="admin@ambarjoyas.com"
+                            autocomplete="email"
+                        >
                     </div>
                     <div class="form-group">
-                        <label for="password"><i class="fas fa-key"></i> Contraseña</label>
-                        <input type="password" id="password" required placeholder="••••••••">
+                        <label for="password">
+                            <i class="fas fa-key"></i> Contraseña
+                        </label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            required 
+                            placeholder="••••••••"
+                            autocomplete="current-password"
+                        >
                     </div>
-                    <button type="submit" class="btn-primary">Ingresar</button>
+                    <button type="submit" class="btn-primary" id="login-btn">
+                        <i class="fas fa-sign-in-alt"></i> Ingresar
+                    </button>
                 </form>
+                <div id="login-error" class="login-error" style="display: none;"></div>
             </div>
         </div>
 
         <!-- Admin Panel (hidden by default) -->
         <div id="admin-panel" class="admin-panel" style="display: none;">
             <div class="container">
-                <h2><i class="fas fa-plus-circle"></i> Agregar Nuevo Producto</h2>
-                <form id="producto-form" class="producto-form">
-                    <div class="form-group">
-                        <label for="nombre">Nombre del producto</label>
-                        <input type="text" id="nombre" required>
+                <div class="admin-header">
+                    <h2><i class="fas fa-plus-circle"></i> Agregar Nuevo Producto</h2>
+                </div>
+                
+                <form id="producto-form" class="producto-form" enctype="multipart/form-data">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nombre">Nombre del producto *</label>
+                            <input type="text" id="nombre" required placeholder="Ej: Collar de perlas">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="precio">Precio ($) *</label>
+                            <input type="number" id="precio" step="0.01" min="0" required placeholder="0.00">
+                        </div>
                     </div>
                     
                     <div class="form-group">
-                        <label for="precio">Precio ($)</label>
-                        <input type="number" id="precio" step="0.01" required>
+                        <label for="descripcion">Descripción *</label>
+                        <textarea id="descripcion" rows="4" required placeholder="Describe el producto..."></textarea>
                     </div>
                     
                     <div class="form-group">
-                        <label for="descripcion">Descripción</label>
-                        <textarea id="descripcion" rows="3" required></textarea>
+                        <label for="imagen">Imagen del producto *</label>
+                        <div class="file-input-container">
+                            <input type="file" id="imagen" accept="image/*" required>
+                            <div class="file-input-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Seleccionar imagen</span>
+                            </div>
+                        </div>
+                        <div id="imagen-preview" class="imagen-preview" style="display: none;">
+                            <img src="" alt="Vista previa">
+                        </div>
+                        <small>Máximo 5MB. Formatos: JPG, PNG, GIF</small>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="imagen">Imagen del producto</label>
-                        <input type="file" id="imagen" accept="image/*" required>
-                    </div>
-                    
-                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Agregar Producto</button>
+                    <button type="submit" class="btn-primary" id="submit-producto">
+                        <i class="fas fa-save"></i> Agregar Producto
+                    </button>
                 </form>
 
-                <h2><i class="fas fa-box"></i> Productos Existentes</h2>
-                <div id="admin-productos-lista" class="admin-productos-lista">
-                    <!-- Lista de productos para administrar -->
+                <div class="admin-section">
+                    <h2><i class="fas fa-box"></i> Productos Existentes</h2>
+                    <div id="admin-productos-lista" class="admin-productos-lista">
+                        <!-- Lista de productos para administrar -->
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando productos...
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
